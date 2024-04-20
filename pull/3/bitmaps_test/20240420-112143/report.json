@@ -1,0 +1,147 @@
+{
+  "testSuite": "BackstopJS",
+  "tests": [
+    {
+      "pair": {
+        "reference": "../bitmaps_reference/1190135762_Landing_page_0_document_0_Breakpoint_XS.png",
+        "test": "../bitmaps_test/20240420-112143/1190135762_Landing_page_0_document_0_Breakpoint_XS.png",
+        "selector": "document",
+        "fileName": "1190135762_Landing_page_0_document_0_Breakpoint_XS.png",
+        "label": "Landing page",
+        "requireSameDimensions": 0.1,
+        "misMatchThreshold": 0.1,
+        "url": "http://visual-regression-example:8080/user",
+        "expect": 0,
+        "viewportLabel": "Breakpoint_XS",
+        "diff": {
+          "isSameDimensions": true,
+          "dimensionDifference": {
+            "width": 0,
+            "height": 0
+          },
+          "misMatchPercentage": "0.00"
+        }
+      },
+      "status": "pass"
+    },
+    {
+      "pair": {
+        "reference": "../bitmaps_reference/1190135762_Landing_page_0_document_1_Breakpoint_S.png",
+        "test": "../bitmaps_test/20240420-112143/1190135762_Landing_page_0_document_1_Breakpoint_S.png",
+        "selector": "document",
+        "fileName": "1190135762_Landing_page_0_document_1_Breakpoint_S.png",
+        "label": "Landing page",
+        "requireSameDimensions": 0.1,
+        "misMatchThreshold": 0.1,
+        "url": "http://visual-regression-example:8080/user",
+        "expect": 0,
+        "viewportLabel": "Breakpoint_S",
+        "diff": {
+          "isSameDimensions": true,
+          "dimensionDifference": {
+            "width": 0,
+            "height": 0
+          },
+          "rawMisMatchPercentage": 0,
+          "misMatchPercentage": "0.00",
+          "analysisTime": 23
+        }
+      },
+      "status": "pass"
+    },
+    {
+      "pair": {
+        "reference": "../bitmaps_reference/1190135762_Landing_page_0_document_2_Breakpoint_M.png",
+        "test": "../bitmaps_test/20240420-112143/1190135762_Landing_page_0_document_2_Breakpoint_M.png",
+        "selector": "document",
+        "fileName": "1190135762_Landing_page_0_document_2_Breakpoint_M.png",
+        "label": "Landing page",
+        "requireSameDimensions": 0.1,
+        "misMatchThreshold": 0.1,
+        "url": "http://visual-regression-example:8080/user",
+        "expect": 0,
+        "viewportLabel": "Breakpoint_M",
+        "diff": {
+          "isSameDimensions": true,
+          "dimensionDifference": {
+            "width": 0,
+            "height": 0
+          },
+          "misMatchPercentage": "0.00"
+        }
+      },
+      "status": "pass"
+    },
+    {
+      "pair": {
+        "reference": "../bitmaps_reference/1190135762_Landing_page_0_document_3_Breakpoint_L.png",
+        "test": "../bitmaps_test/20240420-112143/1190135762_Landing_page_0_document_3_Breakpoint_L.png",
+        "selector": "document",
+        "fileName": "1190135762_Landing_page_0_document_3_Breakpoint_L.png",
+        "label": "Landing page",
+        "requireSameDimensions": 0.1,
+        "misMatchThreshold": 0.1,
+        "url": "http://visual-regression-example:8080/user",
+        "expect": 0,
+        "viewportLabel": "Breakpoint_L",
+        "diff": {
+          "isSameDimensions": true,
+          "dimensionDifference": {
+            "width": 0,
+            "height": 0
+          },
+          "rawMisMatchPercentage": 0,
+          "misMatchPercentage": "0.00",
+          "analysisTime": 23
+        }
+      },
+      "status": "pass"
+    },
+    {
+      "pair": {
+        "reference": "../bitmaps_reference/1190135762_Landing_page_0_document_4_Breakpoint_XL.png",
+        "test": "../bitmaps_test/20240420-112143/1190135762_Landing_page_0_document_4_Breakpoint_XL.png",
+        "selector": "document",
+        "fileName": "1190135762_Landing_page_0_document_4_Breakpoint_XL.png",
+        "label": "Landing page",
+        "requireSameDimensions": 0.1,
+        "misMatchThreshold": 0.1,
+        "url": "http://visual-regression-example:8080/user",
+        "expect": 0,
+        "viewportLabel": "Breakpoint_XL",
+        "diff": {
+          "isSameDimensions": true,
+          "dimensionDifference": {
+            "width": 0,
+            "height": 0
+          },
+          "misMatchPercentage": "0.00"
+        }
+      },
+      "status": "pass"
+    },
+    {
+      "pair": {
+        "reference": "../bitmaps_reference/1190135762_Landing_page_0_document_5_Breakpoint_XXL.png",
+        "test": "../bitmaps_test/20240420-112143/1190135762_Landing_page_0_document_5_Breakpoint_XXL.png",
+        "selector": "document",
+        "fileName": "1190135762_Landing_page_0_document_5_Breakpoint_XXL.png",
+        "label": "Landing page",
+        "requireSameDimensions": 0.1,
+        "misMatchThreshold": 0.1,
+        "url": "http://visual-regression-example:8080/user",
+        "expect": 0,
+        "viewportLabel": "Breakpoint_XXL",
+        "diff": {
+          "isSameDimensions": true,
+          "dimensionDifference": {
+            "width": 0,
+            "height": 0
+          },
+          "misMatchPercentage": "0.00"
+        }
+      },
+      "status": "pass"
+    }
+  ]
+}
