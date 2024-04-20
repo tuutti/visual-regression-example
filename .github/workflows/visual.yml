@@ -77,7 +77,7 @@ jobs:
 
           # Always update reference images when the pull request is merged to main branch.
           if [ ! -d "web/sites/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
-            node web/backstop/config.js reference
+            node backstop/config.js reference
             echo "UPLOAD_BITMAP=1" >> $GITHUB_ENV
           fi
 
