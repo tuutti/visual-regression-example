@@ -32,9 +32,6 @@ jobs:
       - name: Build project
         run: composer install
 
-      - name: Start the project
-        run: docker compose up -d --wait && sleep 10
-
       - name: Restore files folder
         id: drupal-cache
         uses: actions/cache@v4
@@ -45,17 +42,26 @@ jobs:
       - name: Prepare Drupal setup
         run: mkdir web/sites/default/files/styles -p && chmod 777 web/sites/default -R
 
+      - name: Start the project
+        run: |
+          docker compose up -d --wait
+          # Wait for Drupal to respond.
+          for i in {1..5}; do docker compose exec app bash -c "drush sqlq 'SHOW TABLES;' -q" && break || sleep 5; done
+
+        # Install the site from existing dump when the cache restoration was successful.
       - name: Install Drupal from existing dump
         if: steps.drupal-cache.outputs.cache-hit == 'true'
         run: |
           docker compose exec app bash -c "mysql --user=drupal --password=drupal --database=drupal --host=db --port=3306 -A < /app/web/sites/default/files/latest.sql"
           docker compose exec app bash -c "drush deploy"
 
+        # Install the site from scratch using existing configuration when we failed to restore the cache.
+        # The database is then dumped into the files folder, so we don't have to deal with multiple caches.
+        # Set up any default content in this step.
       - name: Install Drupal from scratch
         if: steps.drupal-cache.outputs.cache-hit != 'true'
         run: |
           docker compose exec app bash -c "drush si --existing-config -y"
-          docker compose exec app bash -c "drush en redis -y"
           docker compose exec app bash -c "drush sql-dump --result-file=/app/web/sites/default/files/latest.sql"
 
       - name: Node setup
@@ -93,7 +99,6 @@ jobs:
           compression-level: 0
 
       - name: Run tests
-        working-directory: ${{ env.THEME_FOLDER }}
         id: run-tests
         # Skip tests when run against the 'main' branch since we're generating
         # reference images and tests should never fail.
