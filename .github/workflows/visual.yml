@@ -46,7 +46,7 @@ jobs:
         run: |
           docker compose up -d --wait
           # Wait for Drupal to respond.
-          for i in {1..5}; do docker compose exec app bash -c "drush status -q" && break || sleep 5; done
+          for i in {1..5}; do docker compose exec app bash -c "drush sqlq 'SHOW TABLES;' -q" && break || sleep 5; done
 
         # Install the site from existing dump when the cache restoration was successful.
       - name: Install Drupal from existing dump
