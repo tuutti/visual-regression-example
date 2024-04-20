@@ -48,7 +48,7 @@ jobs:
       - name: Install Drupal from existing dump
         if: steps.drupal-cache.outputs.cache-hit == 'true'
         run: |
-          docker compose exec app bash -c "mysql --user=drupal --password=drupal --database=drupal --host=db --port=3306 -A < /app/public/sites/default/files/latest.sql"
+          docker compose exec app bash -c "mysql --user=drupal --password=drupal --database=drupal --host=db --port=3306 -A < /app/web/sites/default/files/latest.sql"
           docker compose exec app bash -c "drush updb -y"
 
       - name: Install Drupal from scratch
@@ -56,7 +56,7 @@ jobs:
         run: |
           docker compose exec app bash -c "drush si minimal -y"
           docker compose exec app bash -c "drush en redis -y"
-          docker compose exec app bash -c "drush sql-dump --result-file=/app/public/sites/default/files/latest.sql"
+          docker compose exec app bash -c "drush sql-dump --result-file=/app/web/sites/default/files/latest.sql"
 
       - name: Node setup
         run: |
