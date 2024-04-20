@@ -73,15 +73,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh run download -n bitmaps -D web/backstop/bitmaps_reference || true
+          gh run download -n bitmaps -D web/sites/backstop/bitmaps_reference || true
 
           # Always update reference images when the pull request is merged to main branch.
-          if [ ! -d "web/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
-            GENERATE_REFERENCES=1
-          fi
-
-          # Regenerate reference images
-          if [ "$GENERATE_REFERENCES" == "1" ]; then
+          if [ ! -d "web/sites/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
             node web/backstop/config.js reference
             echo "UPLOAD_BITMAP=1" >> $GITHUB_ENV
           fi
@@ -90,7 +85,7 @@ jobs:
         if: ${{ env.UPLOAD_BITMAP == '1' }}
         with:
           name: bitmaps
-          path: web/backstop/bitmaps_reference
+          path: web/sites/backstop/bitmaps_reference
           overwrite: true
           compression-level: 0
 
@@ -115,7 +110,7 @@ jobs:
         if: github.ref != 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: web/backstop/
+          publish_dir: web/sites/backstop/
           destination_dir: pull/${{github.event.number}}
 
       - name: Update comment
