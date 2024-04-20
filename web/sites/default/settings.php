@@ -918,7 +918,6 @@ if (
   // error while trying to enable the module.
   $settings['container_yamls'][] = 'modules/contrib/redis/redis.services.yml';
 }
-
 $databases['default']['default'] = [
   'database' => 'drupal',
   'username' => 'drupal',
