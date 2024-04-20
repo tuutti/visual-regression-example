@@ -71,10 +71,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh run download -n bitmaps -D backstop_data/full/bitmaps_reference || true
+          gh run download -n bitmaps -D web/backstop/bitmaps_reference || true
 
           # Always update reference images when the pull request is merged to main branch.
-          if [ ! -d "backstop_data/full/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
+          if [ ! -d "web/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
             GENERATE_REFERENCES=1
           fi
 
@@ -88,7 +88,7 @@ jobs:
         if: ${{ env.UPLOAD_BITMAP == '1' }}
         with:
           name: bitmaps
-          path: ${{ env.THEME_FOLDER }}/backstop_data/full/bitmaps_reference
+          path: web/backstop/bitmaps_reference
           overwrite: true
           compression-level: 0
 
