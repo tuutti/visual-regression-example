@@ -1,0 +1,32 @@
+# Ignore project files that should not be in version control
+drush/sites/
+drush/Commands/*
+node_modules
+web/core
+web/libraries
+web/modules/contrib
+web/themes/contrib
+web/sites/default/files
+vendor
+web/sites/simpletest/
+web/backstop/bitmaps_reference
+web/backstop/bitmaps_test
+web/backstop/html_report
+
+# Ignore the folder created by PhpStorm
+.idea/*
+
+# Ignore local settings
+web/sites/default/local.settings.php
+web/sites/default/local.services.yml
+
+*.sql
+*.env.local
+
+# Ignore OSX generated files
+._*
+.DS_Store
+
+!*.gitkeep
+!*.keepme
+.phpunit.*
