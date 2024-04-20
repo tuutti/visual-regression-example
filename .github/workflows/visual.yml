@@ -49,7 +49,7 @@ jobs:
         if: steps.drupal-cache.outputs.cache-hit == 'true'
         run: |
           docker compose exec app bash -c "mysql --user=drupal --password=drupal --database=drupal --host=db --port=3306 -A < /app/web/sites/default/files/latest.sql"
-          docker compose exec app bash -c "drush updb -y"
+          docker compose exec app bash -c "drush deploy"
 
       - name: Install Drupal from scratch
         if: steps.drupal-cache.outputs.cache-hit != 'true'
