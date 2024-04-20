@@ -61,7 +61,7 @@ function getConfig(hostname) {
     filter: processArgs[2] ?? null, // Add filter for label string here if you want to debug a single component, like the events component.
     docker: true,
     config: {
-      'dockerCommandTemplate': 'docker run --rm -it --network=stonehenge-network --mount type=bind,source="{cwd}",target=/src backstopjs/backstopjs:{version} {backstopCommand} {args}',
+      'dockerCommandTemplate': 'docker run --rm --network=stonehenge-network --mount type=bind,source="{cwd}",target=/src backstopjs/backstopjs:{version} {backstopCommand} {args}',
       'viewports': viewports,
       'scenarios': scenarios,
       'mergeImgHack': true,
