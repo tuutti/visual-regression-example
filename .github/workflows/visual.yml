@@ -54,7 +54,7 @@ jobs:
       - name: Install Drupal from scratch
         if: steps.drupal-cache.outputs.cache-hit != 'true'
         run: |
-          docker compose exec app bash -c "drush si minimal -y"
+          docker compose exec app bash -c "drush si --existing-config -y"
           docker compose exec app bash -c "drush en redis -y"
           docker compose exec app bash -c "drush sql-dump --result-file=/app/web/sites/default/files/latest.sql"
 
