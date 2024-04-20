@@ -69,10 +69,6 @@ jobs:
           export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install && npm install && npx playwright install
 
-      - name: Check if we should re-create reference images
-        if: contains( github.event.pull_request.labels.*.name, 'recreate-reference-images')
-        run: echo "GENERATE_REFERENCES=1" >> $GITHUB_ENV
-
       - name: Generate reference images
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,7 +100,7 @@ jobs:
         # reference images and tests should never fail.
         if: github.ref != 'refs/heads/main'
         run: |
-          if ! node web/backstop/config.js test; then
+          if ! node backstop/config.js test; then
             echo "result=:warning: Visual regression found! Please check if this change is wanted or accidental. " >> $GITHUB_OUTPUT
           else
             echo "result=✅ Tests passed!" >> $GITHUB_OUTPUT

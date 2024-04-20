@@ -1,3 +1,2 @@
 # Visual regression example
 
-
