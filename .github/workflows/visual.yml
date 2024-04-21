@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   tests:
-    # Only run tests against "Ready for review" pull requests.
+    # Don't run tests against Draft pull requests.
     if: github.event.pull_request.draft == false
 
     runs-on: ubuntu-latest
@@ -49,7 +49,9 @@ jobs:
           key: drupal-cache
 
       - name: Prepare Drupal setup
-        run: mkdir web/sites/default/files/styles -p && chmod 777 web/sites/default -R
+        run: |
+          mkdir web/sites/default/files/styles -p && \
+          chmod 777 web/sites/default -R
 
         # Start the project using Docker compose and wait until the database server
         # is up.
@@ -57,36 +59,46 @@ jobs:
         run: |
           docker compose up -d --wait
           # Wait for Drupal to respond.
-          for i in {1..5}; do docker compose exec app bash -c "drush sqlq 'SHOW TABLES;' -q" && break || sleep 5; done
+          for i in {1..5}; do docker compose exec app bash \
+            -c "drush sqlq 'SHOW TABLES;' -q" && break || sleep 5; done
 
         # Install the site from existing dump if the cache restoration was successful.
       - name: Install Drupal from existing dump
         if: steps.drupal-cache.outputs.cache-hit == 'true'
         run: |
-          docker compose exec app bash -c "mysql --user=drupal --password=drupal --database=drupal --host=db --port=3306 -A < /app/web/sites/default/files/latest.sql"
+          docker compose exec app bash -c "mysql \
+            --user=drupal \
+            --password=drupal \
+            --database=drupal \
+            --host=db \
+            --port=3306 -A < /app/web/sites/default/files/latest.sql"
+
           docker compose exec app bash -c "drush deploy"
 
-        # Install the site from scratch using existing configuration if we failed to restore
-        # the cache.
-        # Dump the database into the files folder, so we can speed up the installation process
-        # and install Drupal using that dump from now on.
+        # Install the site from scratch using existing configuration if we failed
+        # to restore the cache.
+        #
+        # Dump the database into the files folder, so we can speed up the
+        # installation process and install Drupal using that dump from now on.
       - name: Install Drupal from scratch
         if: steps.drupal-cache.outputs.cache-hit != 'true'
         run: |
           docker compose exec app bash -c "drush si --existing-config -y"
           docker compose exec app bash -c "drush sql-dump --result-file=/app/web/sites/default/files/latest.sql"
 
-        # You can change the Node.js version by creating a '.nvmrc' file in your Git root
-        # with Node.js version in it.
+        # You can change the Node.js version by creating a '.nvmrc' file in
+        # your Git root with Node.js version in it.
       - name: Setup Node.js dependencies
         run: |
           export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install && npm install && npx playwright install
 
-        # Generate new reference images every time something is merged into the main branch.
-        # This works as an 'approval' mechanism, meaning anything in the main branch is known
-        # to be good.
-        # The reference images are stored as a GitHub artifact and restored when possible.
+        # Generate new reference images every time something is merged into the
+        # main branch.
+        # This works as an 'approval' mechanism, meaning anything in the main
+        # branch is known to be good.
+        # The reference images are stored as Actions artifact, and we attempt
+        # to download and use them if possible.
         # In case no reference images exist, new ones will be generated.
       - name: Generate reference images
         id: reference-images
@@ -123,7 +135,7 @@ jobs:
 
         # Deploy the HTML report as GitHub Pages, so we can easily compare the
         # results.
-        # You might want to use an external repository to store the preview HTML reports
+        # You might want to use an external repository to store the test results
         # to prevent your main repository from blowing up in size.
         # @see https://github.com/peaceiris/actions-gh-pages?tab=readme-ov-file#%EF%B8%8F-deploy-to-external-repository-external_repository
       - name: Deploy to PR preview
