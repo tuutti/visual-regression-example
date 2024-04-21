@@ -3,24 +3,30 @@ on:
     types: [opened, reopened, synchronize, ready_for_review]
     paths-ignore:
       - '**.md'
-    branches-ignore:
-      - 'renovate/**'
   push:
     branches:
       - main
-env:
-  SIMPLETEST_DB: mysql://drupal:drupal@db:3306/drupal
+
 name: Visual regression tests
 
+# The concurrency group is used to make sure only one visual regression test
+# can be run at a time. Running multiple tests in parallel can cause a race
+# condition with GitHub Pages deployments.
+# Due to GitHub's limitation, only one test suite can be queued and run at
+# a time; any additional run will be canceled automatically and must be
+# re-started manually.
 concurrency:
   group: visual-regression
 
 jobs:
   tests:
+    # Don't run tests against Draft pull requests.
     if: github.event.pull_request.draft == false
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Update
         run:  sudo apt update
 
@@ -32,6 +38,9 @@ jobs:
       - name: Build project
         run: composer install
 
+        # Store the files folder in cache, so we don't have to install Drupal from
+        # scratch every time.
+        # You can force new re-installation by manually deleting the Actions cache.
       - name: Restore files folder
         id: drupal-cache
         uses: actions/cache@v4
@@ -40,61 +49,74 @@ jobs:
           key: drupal-cache
 
       - name: Prepare Drupal setup
-        run: mkdir web/sites/default/files/styles -p && chmod 777 web/sites/default -R
+        run: |
+          mkdir web/sites/default/files/styles -p && \
+          chmod 777 web/sites/default -R
 
+        # Start the project using Docker compose and wait until the database server
+        # is up.
       - name: Start the project
         run: |
           docker compose up -d --wait
           # Wait for Drupal to respond.
-          for i in {1..5}; do docker compose exec app bash -c "drush sqlq 'SHOW TABLES;' -q" && break || sleep 5; done
+          for i in {1..5}; do docker compose exec app bash \
+            -c "drush sqlq 'SHOW TABLES;' -q" && break || sleep 5; done
 
-        # Install the site from existing dump when the cache restoration was successful.
+        # Install the site from existing dump if the cache restoration was successful.
       - name: Install Drupal from existing dump
         if: steps.drupal-cache.outputs.cache-hit == 'true'
         run: |
-          docker compose exec app bash -c "mysql --user=drupal --password=drupal --database=drupal --host=db --port=3306 -A < /app/web/sites/default/files/latest.sql"
+          docker compose exec app bash -c "mysql \
+            --user=drupal \
+            --password=drupal \
+            --database=drupal \
+            --host=db \
+            --port=3306 -A < /app/web/sites/default/files/latest.sql"
+
           docker compose exec app bash -c "drush deploy"
 
-        # Install the site from scratch using existing configuration when we failed to restore the cache.
-        # The database is then dumped into the files folder, so we don't have to deal with multiple caches.
-        # Set up any default content in this step.
+        # Install the site from scratch using existing configuration if we failed
+        # to restore the cache.
+        #
+        # Dump the database into the files folder, so we can speed up the
+        # installation process and install Drupal using that dump from now on.
       - name: Install Drupal from scratch
         if: steps.drupal-cache.outputs.cache-hit != 'true'
         run: |
           docker compose exec app bash -c "drush si --existing-config -y"
           docker compose exec app bash -c "drush sql-dump --result-file=/app/web/sites/default/files/latest.sql"
 
-      - name: Node setup
+        # You can change the Node.js version by creating a '.nvmrc' file in
+        # your Git root with Node.js version in it.
+      - name: Setup Node.js dependencies
         run: |
           export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install && npm install && npx playwright install
 
-      - name: Check if we should re-create reference images
-        if: contains( github.event.pull_request.labels.*.name, 'recreate-reference-images')
-        run: echo "GENERATE_REFERENCES=1" >> $GITHUB_ENV
-
+        # Generate new reference images every time something is merged into the
+        # main branch.
+        # This works as an 'approval' mechanism, meaning anything in the main
+        # branch is known to be good.
+        # The reference images are stored as Actions artifact, and we attempt
+        # to download and use them if possible.
+        # In case no reference images exist, new ones will be generated.
       - name: Generate reference images
+        id: reference-images
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh run download -n bitmaps -D web/backstop/bitmaps_reference || true
+          gh run download -n bitmaps -D web/sites/backstop/bitmaps_reference || true
 
-          # Always update reference images when the pull request is merged to main branch.
-          if [ ! -d "web/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
-            GENERATE_REFERENCES=1
-          fi
-
-          # Regenerate reference images
-          if [ "$GENERATE_REFERENCES" == "1" ]; then
-            node web/backstop/config.js reference
-            echo "UPLOAD_BITMAP=1" >> $GITHUB_ENV
+          if [ ! -d "web/sites/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
+            node backstop/backstop.js reference
+            echo "upload-bitmap=true" >> $GITHUB_OUTPUT
           fi
 
       - uses: actions/upload-artifact@v4
-        if: ${{ env.UPLOAD_BITMAP == '1' }}
+        if: steps.reference-images.outputs.upload-bitmap == 'true'
         with:
           name: bitmaps
-          path: web/backstop/bitmaps_reference
+          path: web/sites/backstop/bitmaps_reference
           overwrite: true
           compression-level: 0
 
@@ -104,22 +126,24 @@ jobs:
         # reference images and tests should never fail.
         if: github.ref != 'refs/heads/main'
         run: |
-          if ! node web/backstop/config.js test; then
+          if ! node backstop/backstop.js test; then
             echo "result=:warning: Visual regression found! Please check if this change is wanted or accidental. " >> $GITHUB_OUTPUT
           else
             echo "result=✅ Tests passed!" >> $GITHUB_OUTPUT
           fi
           echo "report_url=You can check the output here: https://tuutti.github.io/visual-regression-example/pull/${{ github.event.pull_request.number }}/html_report/" >> $GITHUB_OUTPUT
 
-      - name: Export container logs
-        run: docker compose logs app > /tmp/container.log
-
+        # Deploy the HTML report as GitHub Pages, so we can easily compare the
+        # results.
+        # You might want to use an external repository to store the test results
+        # to prevent your main repository from blowing up in size.
+        # @see https://github.com/peaceiris/actions-gh-pages?tab=readme-ov-file#%EF%B8%8F-deploy-to-external-repository-external_repository
       - name: Deploy to PR preview
         uses: peaceiris/actions-gh-pages@v4
         if: github.ref != 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: web/backstop/
+          publish_dir: web/sites/backstop/
           destination_dir: pull/${{github.event.number}}
 
       - name: Update comment
@@ -129,6 +153,9 @@ jobs:
           comment_tag: status
           pr_number: ${{ github.event.number }}
           message: "${{join(steps.run-tests.outputs.*, '  ')}}"
+
+      - name: Export container logs
+        run: docker compose logs app > /tmp/container.log
 
       - name: Upload container logs
         uses: actions/upload-artifact@v4

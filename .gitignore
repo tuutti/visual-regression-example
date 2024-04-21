@@ -9,9 +9,7 @@ web/themes/contrib
 web/sites/default/files
 vendor
 web/sites/simpletest/
-web/backstop/bitmaps_reference
-web/backstop/bitmaps_test
-web/backstop/html_report
+web/sites/backstop
 
 # Ignore the folder created by PhpStorm
 .idea/*
