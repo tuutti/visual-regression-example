@@ -9,7 +9,7 @@ on:
 
 name: Visual regression tests
 
-# The concurrency group is used to make sure only one visual-regression test
+# The concurrency group is used to make sure only one visual regression test
 # can be run at a time. Running multiple tests in parallel can cause a race
 # condition with GitHub Pages deployments.
 # Due to GitHub's limitation, only one test suite can be queued and run at
@@ -51,8 +51,8 @@ jobs:
       - name: Prepare Drupal setup
         run: mkdir web/sites/default/files/styles -p && chmod 777 web/sites/default -R
 
-        # Start the project using Docker compose and wait until
-        # the database server is up.
+        # Start the project using Docker compose and wait until the database server
+        # is up.
       - name: Start the project
         run: |
           docker compose up -d --wait
@@ -96,7 +96,7 @@ jobs:
           gh run download -n bitmaps -D web/sites/backstop/bitmaps_reference || true
 
           if [ ! -d "web/sites/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
-            node backstop/config.js reference
+            node backstop/backstop.js reference
             echo "upload-bitmap=true" >> $GITHUB_OUTPUT
           fi
 
@@ -114,15 +114,12 @@ jobs:
         # reference images and tests should never fail.
         if: github.ref != 'refs/heads/main'
         run: |
-          if ! node backstop/config.js test; then
+          if ! node backstop/backstop.js test; then
             echo "result=:warning: Visual regression found! Please check if this change is wanted or accidental. " >> $GITHUB_OUTPUT
           else
             echo "result=✅ Tests passed!" >> $GITHUB_OUTPUT
           fi
           echo "report_url=You can check the output here: https://tuutti.github.io/visual-regression-example/pull/${{ github.event.pull_request.number }}/html_report/" >> $GITHUB_OUTPUT
-
-      - name: Export container logs
-        run: docker compose logs app > /tmp/container.log
 
         # Deploy the HTML report as GitHub Pages, so we can easily compare the
         # results.
@@ -144,6 +141,9 @@ jobs:
           comment_tag: status
           pr_number: ${{ github.event.number }}
           message: "${{join(steps.run-tests.outputs.*, '  ')}}"
+
+      - name: Export container logs
+        run: docker compose logs app > /tmp/container.log
 
       - name: Upload container logs
         uses: actions/upload-artifact@v4
