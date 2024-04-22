@@ -93,27 +93,31 @@ jobs:
           export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install && npm install && npx playwright install
 
-        # Generate new reference images every time something is merged into the
-        # main branch.
-        # This works as an 'approval' mechanism, meaning anything in the main
-        # branch is known to be good.
-        # The reference images are stored as Actions artifact, and we attempt
-        # to download and use them if possible.
-        # In case no reference images exist, new ones will be generated.
-      - name: Generate reference images
-        id: reference-images
+        # Reference images are stored as Actions artifact, attempt to restore
+        # the images.
+      - name: Restore bitmaps
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh run download -n bitmaps -D web/sites/backstop/bitmaps_reference || true
+        run: gh run download -n bitmaps -D web/sites/backstop/bitmaps_reference || true
 
-          if [ ! -d "web/sites/backstop/bitmaps_reference" ] || [ "$GITHUB_REF" == "refs/heads/main" ]; then
-            node backstop/backstop.js reference
-            echo "upload-bitmap=true" >> $GITHUB_OUTPUT
-          fi
+        # Generate new reference images if:
+        # - Something is merged into the main branch.
+        # - Reference images do not exist yet
+        # - Pull request has 'recreate-reference-images' label.
+      - name: Evaluate if we should re-create reference images
+        id: evaluate-reference-images
+        if: |
+          contains( github.event.pull_request.labels.*.name, 'recreate-reference-images') ||
+          hashFiles('web/sites/backstop/bitmaps_reference/') != '' ||
+          github.ref == 'refs/heads/main'
+        run: echo "generate-references=true" >> $GITHUB_OUTPUT
+
+      - name: Generate new reference images
+        if: steps.evaluate-reference-images.outputs.generate-references == 'true'
+        run: node backstop/backstop.js reference
 
       - uses: actions/upload-artifact@v4
-        if: steps.reference-images.outputs.upload-bitmap == 'true'
+        if: steps.evaluate-reference-images.outputs.generate-references == 'true'
         with:
           name: bitmaps
           path: web/sites/backstop/bitmaps_reference
@@ -122,16 +126,16 @@ jobs:
 
       - name: Run tests
         id: run-tests
-        # Skip tests when run against the 'main' branch since we're generating
-        # reference images and tests should never fail.
-        if: github.ref != 'refs/heads/main'
+        # Skip tests if we generated new reference images on this run since tests
+        # should never fail.
+        if: steps.evaluate-reference-images.outputs.generate-references != 'true'
         run: |
           if ! node backstop/backstop.js test; then
             echo "result=:warning: Visual regression found! Please check if this change is wanted or accidental. " >> $GITHUB_OUTPUT
           else
             echo "result=✅ Tests passed!" >> $GITHUB_OUTPUT
           fi
-          echo "report_url=You can check the output here: https://tuutti.github.io/visual-regression-example/pull/${{ github.event.pull_request.number }}/html_report/" >> $GITHUB_OUTPUT
+          echo "report_url=You can check the output here: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pull/${{ github.event.pull_request.number }}/html_report/" >> $GITHUB_OUTPUT
 
         # Deploy the HTML report as GitHub Pages, so we can easily compare the
         # results.
@@ -140,14 +144,14 @@ jobs:
         # @see https://github.com/peaceiris/actions-gh-pages?tab=readme-ov-file#%EF%B8%8F-deploy-to-external-repository-external_repository
       - name: Deploy to PR preview
         uses: peaceiris/actions-gh-pages@v4
-        if: github.ref != 'refs/heads/main'
+        if: steps.evaluate-reference-images.outputs.generate-references != 'true'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: web/sites/backstop/
           destination_dir: pull/${{github.event.number}}
 
       - name: Update comment
-        if: github.ref != 'refs/heads/main'
+        if: steps.evaluate-reference-images.outputs.generate-references != 'true'
         uses: thollander/actions-comment-pull-request@v2
         with:
           comment_tag: status
